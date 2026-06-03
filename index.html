@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>💌 연애상담소</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Apple SD Gothic Neo', sans-serif;
+      background: #fff0f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    h1 { color: #c0396b; margin: 20px 0 4px; font-size: 1.5rem; }
+    p.sub { color: #999; font-size: 0.85rem; margin-bottom: 16px; }
+
+    #api-section {
+      background: white;
+      border: 1px solid #f0c0d0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      width: 100%;
+      max-width: 600px;
+    }
+    #api-section label { font-size: 0.85rem; color: #888; }
+    #api-section input {
+      width: 100%; padding: 8px; margin-top: 6px;
+      border: 1px solid #ddd; border-radius: 8px;
+      font-size: 0.9rem;
+    }
+    #api-section button {
+      margin-top: 8px; padding: 8px 16px;
+      background: #c0396b; color: white;
+      border: none; border-radius: 8px; cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    #chat-box {
+      width: 100%; max-width: 600px;
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #f0c0d0;
+      padding: 16px;
+      height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .msg { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.95rem; line-height: 1.5; }
+    .user { align-self: flex-end; background: #c0396b; color: white; border-bottom-right-radius: 4px; }
+    .ai   { align-self: flex-start; background: #f9e0eb; color: #333; border-bottom-left-radius: 4px; }
+    .system-msg { align-self: center; color: #bbb; font-size: 0.8rem; }
+
+    #input-row {
+      display: flex; gap: 8px;
+      width: 100%; max-width: 600px;
+    }
+    #user-input {
+      flex: 1; padding: 12px 16px;
+      border: 1px solid #f0c0d0; border-radius: 24px;
+      font-size: 0.95rem; outline: none;
+    }
+    #send-btn {
+      padding: 12px 20px;
+      background: #c0396b; color: white;
+      border: none; border-radius: 24px;
+      cursor: pointer; font-size: 0.95rem;
+    }
+    #send-btn:disabled { background: #ddd; cursor: default; }
+  </style>
+</head>
+<body>
+
+<h1>💌 연애상담소</h1>
+<p class="sub">고민을 털어놓아요. 진심으로 들어드릴게요.</p>
+
+<div id="api-section">
+  <label>🔑 Gemini API Key를 입력해주세요</label>
+  <input type="password" id="api-key-input" placeholder="AIza...">
+  <button onclick="setApiKey()">시작하기</button>
+</div>
+
+<div id="chat-box">
+  <div class="msg system-msg">API Key를 입력하면 상담을 시작할 수 있어요 💗</div>
+</div>
+
+<div id="input-row">
+  <input type="text" id="user-input" placeholder="고민을 입력하세요..." disabled
+    onkeydown="if(event.key==='Enter') sendMessage()">
+  <button id="send-btn" onclick="sendMessage()" disabled>전송</button>
+</div>
+
+<script>
+  let apiKey = '';
+  let chats = [];
+
+  const SYSTEM_PROMPT = `당신은 따뜻하고 공감 능력이 뛰어난 연애 상담사입니다.
+사용자의 이야기를 먼저 충분히 공감하고, 
+판단하지 않으며, 실용적인 조언도 부드럽게 건네주세요.
+반말로 친근하게 대화하되, 존중하는 말투를 유지하세요.
+답변은 너무 길지 않게, 2~4문장 정도로 핵심만 전해주세요.`;
+
+  function setApiKey() {
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key) { alert('API Key를 입력해주세요!'); return; }
+    apiKey = key;
+    document.getElementById('api-section').style.display = 'none';
+    document.getElementById('user-input').disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    addMessage('ai', '안녕! 나는 네 연애 고민을 들어줄 상담사야 💗 무슨 일이 있어?');
+    document.getElementById('user-input').focus();
+  }
+
+  function addMessage(role, text) {
+    const box = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const text = input.value.trim();
+    if (!text || !apiKey) return;
+
+    addMessage('user', text);
+    chats.push({ role: 'user', parts: [{ text }] });
+    input.value = '';
+    input.disabled = true;
+    document.getElementById('send-btn').disabled = true;
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: chats
+          })
+        }
+      );
+      const data = await res.json();
+
+      let reply;
+      if (!res.ok) {
+        const code = res.status;
+        const apiMsg = data.error?.message || '';
+        if (code === 400) reply = `요청 형식이 잘못됐어. (400: ${apiMsg})`;
+        else if (code === 401 || code === 403) reply = `API Key가 유효하지 않아. 키를 다시 확인해봐! (${code})`;
+        else if (code === 429) reply = `API 사용량이 초과됐어. 잠깐 후에 다시 시도해줘! (429)`;
+        else if (code >= 500) reply = `Gemini 서버에 문제가 생겼어. 잠시 후 다시 시도해봐! (${code})`;
+        else reply = `알 수 없는 오류가 났어. (${code}: ${apiMsg})`;
+      } else if (!data.candidates?.length) {
+        reply = '응답이 안전 필터에 걸렸거나 빈 답변이 왔어. 다르게 표현해볼래?';
+      } else if (!data.candidates[0].content) {
+        const reason = data.candidates[0].finishReason || '알 수 없음';
+        reply = `답변이 중단됐어 (이유: ${reason}). 다르게 표현해볼래?`;
+      } else {
+        reply = data.candidates[0].content.parts[0].text;
+      }
+
+      if (res.ok && data.candidates?.length && data.candidates[0].content) {
+        chats.push({ role: 'model', parts: [{ text: reply }] });
+      }
+      addMessage('ai', reply);
+    } catch (e) {
+      addMessage('ai', `네트워크 연결에 문제가 생겼어. 인터넷을 확인해봐! (${e.message})`);
+    }
+
+    input.disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+</script>
+</body>
+</html>
