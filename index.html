@@ -1,186 +1,1043 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>💌 연애상담소</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Apple SD Gothic Neo', sans-serif;
-      background: #fff0f5;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    h1 { color: #c0396b; margin: 20px 0 4px; font-size: 1.5rem; }
-    p.sub { color: #999; font-size: 0.85rem; margin-bottom: 16px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>연애노트</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose: #c0415a;
+    --rose-light: #f5e6ea;
+    --rose-mid: #e8b4bf;
+    --ink: #2a1f24;
+    --ink-soft: #5c4a52;
+    --ink-muted: #9b8890;
+    --cream: #fdf8f5;
+    --cream-2: #f7f0ec;
+    --border: #e8ddd9;
+    --white: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+  }
 
-    #api-section {
-      background: white;
-      border: 1px solid #f0c0d0;
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-bottom: 16px;
-      width: 100%;
-      max-width: 600px;
-    }
-    #api-section label { font-size: 0.85rem; color: #888; }
-    #api-section input {
-      width: 100%; padding: 8px; margin-top: 6px;
-      border: 1px solid #ddd; border-radius: 8px;
-      font-size: 0.9rem;
-    }
-    #api-section button {
-      margin-top: 8px; padding: 8px 16px;
-      background: #c0396b; color: white;
-      border: none; border-radius: 8px; cursor: pointer;
-      font-size: 0.9rem;
-    }
+  /* API KEY SCREEN */
+  #api-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .api-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+  .api-card .logo-mark {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 2rem;
+    color: var(--rose);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+  .api-card h2 {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--ink-soft);
+    margin-bottom: 1.5rem;
+  }
+  .api-card input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--cream);
+    margin-bottom: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .api-card input:focus { border-color: var(--rose-mid); }
+  .api-card button {
+    width: 100%;
+    padding: 0.75rem;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .api-card button:hover { opacity: 0.85; }
+  .api-card .hint {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    margin-top: 1rem;
+    line-height: 1.6;
+  }
 
-    #chat-box {
-      width: 100%; max-width: 600px;
-      background: white;
-      border-radius: 16px;
-      border: 1px solid #f0c0d0;
-      padding: 16px;
-      height: 400px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .msg { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.95rem; line-height: 1.5; }
-    .user { align-self: flex-end; background: #c0396b; color: white; border-bottom-right-radius: 4px; }
-    .ai   { align-self: flex-start; background: #f9e0eb; color: #333; border-bottom-left-radius: 4px; }
-    .system-msg { align-self: center; color: #bbb; font-size: 0.8rem; }
+  /* MAIN APP */
+  #app { display: none; }
+  .app-header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header .brand {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1.3rem;
+    color: var(--rose);
+    letter-spacing: 0.03em;
+  }
+  .tab-nav {
+    display: flex;
+    gap: 0.25rem;
+    background: var(--cream-2);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .tab-nav button {
+    padding: 0.4rem 1rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab-nav button.active {
+    background: var(--white);
+    color: var(--rose);
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
 
-    #input-row {
-      display: flex; gap: 8px;
-      width: 100%; max-width: 600px;
-    }
-    #user-input {
-      flex: 1; padding: 12px 16px;
-      border: 1px solid #f0c0d0; border-radius: 24px;
-      font-size: 0.95rem; outline: none;
-    }
-    #send-btn {
-      padding: 12px 20px;
-      background: #c0396b; color: white;
-      border: none; border-radius: 24px;
-      cursor: pointer; font-size: 0.95rem;
-    }
-    #send-btn:disabled { background: #ddd; cursor: default; }
-  </style>
+  /* PAGES */
+  .page { display: none; padding: 2rem; max-width: 760px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* DIARY PAGE */
+  .diary-date-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .diary-date-header .today-date {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1rem;
+    color: var(--ink-soft);
+  }
+  .diary-write-area {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .diary-write-area textarea {
+    width: 100%;
+    min-height: 140px;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'Noto Serif KR', serif;
+    font-size: 1rem;
+    line-height: 1.9;
+    color: var(--ink);
+    background: transparent;
+  }
+  .diary-write-area textarea::placeholder { color: var(--ink-muted); }
+  .diary-write-area .write-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+  }
+  .btn-rose {
+    padding: 0.55rem 1.25rem;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn-rose:hover { opacity: 0.85; }
+  .btn-rose:disabled { opacity: 0.4; cursor: default; }
+
+  .diary-entries { display: flex; flex-direction: column; gap: 1.25rem; }
+  .diary-entry {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .entry-header {
+    padding: 1rem 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .entry-date-badge {
+    font-size: 0.78rem;
+    color: var(--rose);
+    background: var(--rose-light);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .entry-body { padding: 1.25rem; }
+  .entry-text {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 0.95rem;
+    line-height: 1.9;
+    color: var(--ink);
+    margin-bottom: 1rem;
+    white-space: pre-wrap;
+  }
+  .ai-response {
+    background: var(--rose-light);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+  }
+  .ai-response .ai-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--rose);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .ai-response .ai-text {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: var(--ink-soft);
+  }
+  .ai-loading {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    font-style: italic;
+    padding: 0.5rem 0;
+  }
+  .dot-anim::after {
+    content: '';
+    animation: dots 1.2s steps(3, end) infinite;
+  }
+  @keyframes dots {
+    0%   { content: '.'; }
+    33%  { content: '..'; }
+    66%  { content: '...'; }
+  }
+
+  /* MOOD PICKER */
+  .picker-block {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .picker-label {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+  .mood-options { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .mood-option {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .mood-option:hover { border-color: var(--rose-mid); }
+  .mood-option.selected {
+    background: var(--rose-light);
+    border-color: var(--rose);
+    transform: scale(1.1);
+  }
+
+  /* DISTANCE SLIDER */
+  .distance-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .distance-end {
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+  }
+  .distance-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--rose-mid);
+    outline: none;
+  }
+  .distance-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--rose);
+    cursor: pointer;
+  }
+  .distance-row input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: var(--rose);
+    cursor: pointer;
+  }
+  .distance-value {
+    font-size: 0.8rem;
+    color: var(--rose);
+    font-weight: 500;
+    width: 44px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* DIARY CALENDAR */
+  .diary-calendar {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .calendar-header .cal-month-label {
+    font-family: 'Noto Serif KR', serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    min-width: 100px;
+    text-align: center;
+  }
+  .cal-nav {
+    width: 28px; height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+  .cal-nav:hover { border-color: var(--rose-mid); color: var(--rose); }
+  .calendar-weekdays, .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .calendar-weekdays {
+    margin-bottom: 0.4rem;
+  }
+  .calendar-weekdays span {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+  }
+  .calendar-grid { gap: 4px; }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    cursor: default;
+  }
+  .cal-cell.empty { visibility: hidden; }
+  .cal-cell.has-entry {
+    background: var(--rose-light);
+    cursor: pointer;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .cal-cell.has-entry:hover { background: var(--rose-mid); }
+  .cal-cell .cal-mood { font-size: 1rem; line-height: 1; }
+  .cal-cell.today { border: 1px solid var(--rose); }
+
+  /* DIARY DETAIL MODAL */
+  .diary-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(42, 31, 36, 0.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .diary-modal-overlay.open { display: flex; }
+  .diary-modal {
+    background: var(--white);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+  .diary-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+  .diary-modal-header .entry-date-badge { font-size: 0.8rem; }
+  .diary-modal-close {
+    border: none;
+    background: none;
+    font-size: 1.2rem;
+    color: var(--ink-muted);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .diary-modal-close:hover { color: var(--rose); }
+  .diary-modal-meta {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  .diary-modal-meta .meta-item { display: flex; align-items: center; gap: 0.35rem; }
+
+  /* CHAT PAGE */
+  .chat-settings {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .settings-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .settings-group { flex: 1; min-width: 220px; }
+  .settings-group label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.6rem;
+  }
+  .category-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .chip {
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    border: 1px solid var(--border);
+    background: var(--cream-2);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--rose-mid); color: var(--rose); }
+  .chip.selected {
+    background: var(--rose);
+    border-color: var(--rose);
+    color: white;
+  }
+
+  .style-sliders { display: flex; flex-direction: column; gap: 0.75rem; }
+  .slider-row { display: flex; align-items: center; gap: 0.75rem; }
+  .slider-label { font-size: 0.82rem; color: var(--ink-soft); width: 80px; flex-shrink: 0; }
+  .slider-row input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--rose-mid);
+    outline: none;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--rose);
+    cursor: pointer;
+  }
+  .slider-pct { font-size: 0.8rem; color: var(--rose); font-weight: 500; width: 32px; text-align: right; }
+
+  .chat-window {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    height: 360px;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .bubble {
+    max-width: 78%;
+    padding: 0.7rem 1rem;
+    border-radius: 14px;
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+  .bubble.user {
+    align-self: flex-end;
+    background: var(--rose);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+  .bubble.ai {
+    align-self: flex-start;
+    background: var(--rose-light);
+    color: var(--ink);
+    border-bottom-left-radius: 4px;
+  }
+  .bubble.system-msg {
+    align-self: center;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 0.78rem;
+    padding: 0.2rem 0;
+  }
+  .chat-input-row {
+    display: flex;
+    gap: 0.6rem;
+  }
+  .chat-input-row input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input-row input:focus { border-color: var(--rose-mid); }
+  .chat-input-row button {
+    padding: 0.75rem 1.25rem;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .chat-input-row button:hover { opacity: 0.85; }
+  .chat-input-row button:disabled { opacity: 0.4; cursor: default; }
+
+  .empty-state {
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 0.88rem;
+    padding: 2rem 0;
+    line-height: 1.8;
+  }
+</style>
 </head>
 <body>
 
-<h1>💌 연애상담소</h1>
-<p class="sub">고민을 털어놓아요. 진심으로 들어드릴게요.</p>
-
-<div id="api-section">
-  <label>🔑 Gemini API Key를 입력해주세요</label>
-  <input type="password" id="api-key-input" placeholder="AIza...">
-  <button onclick="setApiKey()">시작하기</button>
+<!-- API KEY SCREEN -->
+<div id="api-screen">
+  <div class="api-card">
+    <div class="logo-mark">연애노트</div>
+    <h2>오늘의 감정을 기록해요</h2>
+    <input type="password" id="api-key-input" placeholder="Gemini API Key를 입력해주세요">
+    <button onclick="startApp()">시작하기</button>
+    <p class="hint">API Key는 브라우저에만 저장되며 어디에도 전송되지 않아요.<br>aistudio.google.com에서 발급받을 수 있어요.</p>
+  </div>
 </div>
 
-<div id="chat-box">
-  <div class="msg system-msg">API Key를 입력하면 상담을 시작할 수 있어요 💗</div>
-</div>
+<!-- MAIN APP -->
+<div id="app">
+  <header class="app-header">
+    <div class="brand">연애노트</div>
+    <nav class="tab-nav">
+      <button class="active" onclick="switchTab('diary')">일기</button>
+      <button onclick="switchTab('chat')">상담</button>
+    </nav>
+  </header>
 
-<div id="input-row">
-  <input type="text" id="user-input" placeholder="고민을 입력하세요..." disabled
-    onkeydown="if(event.key==='Enter') sendMessage()">
-  <button id="send-btn" onclick="sendMessage()" disabled>전송</button>
+  <!-- DIARY PAGE -->
+  <div class="page active" id="page-diary">
+    <div class="diary-date-header">
+      <span class="today-date" id="today-display"></span>
+    </div>
+
+    <div class="diary-write-area">
+      <textarea id="diary-input" placeholder="오늘 있었던 일, 마음속 이야기를 편하게 적어봐...&#10;아무도 안 봐. 나만 들을게."></textarea>
+
+      <div class="picker-block">
+        <span class="picker-label">오늘의 기분</span>
+        <div class="mood-options" id="mood-options">
+          <button type="button" class="mood-option" data-mood="😊">😊</button>
+          <button type="button" class="mood-option" data-mood="🥰">🥰</button>
+          <button type="button" class="mood-option" data-mood="😢">😢</button>
+          <button type="button" class="mood-option" data-mood="😡">😡</button>
+          <button type="button" class="mood-option" data-mood="😰">😰</button>
+          <button type="button" class="mood-option" data-mood="😴">😴</button>
+          <button type="button" class="mood-option" data-mood="🥲">🥲</button>
+        </div>
+      </div>
+
+      <div class="picker-block">
+        <span class="picker-label">너와 나의 거리</span>
+        <div class="distance-row">
+          <span class="distance-end">가까워</span>
+          <input type="range" id="distance-slider" min="0" max="100" value="50" oninput="updateDistanceLabel()">
+          <span class="distance-end">멀어졌어</span>
+          <span class="distance-value" id="distance-value">50%</span>
+        </div>
+      </div>
+
+      <div class="write-footer">
+        <button class="btn-rose" id="diary-submit-btn" onclick="submitDiary()">친구에게 보내기</button>
+      </div>
+    </div>
+
+    <div class="diary-entries" id="diary-entries">
+      <div class="empty-state">아직 기록이 없어.<br>오늘 마음을 적어봐.</div>
+    </div>
+
+    <div class="diary-calendar" id="diary-calendar">
+      <div class="calendar-header">
+        <button class="cal-nav" onclick="changeCalendarMonth(-1)">‹</button>
+        <span class="cal-month-label" id="cal-month-label"></span>
+        <button class="cal-nav" onclick="changeCalendarMonth(1)">›</button>
+      </div>
+      <div class="calendar-weekdays">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+  </div>
+
+  <!-- DIARY DETAIL MODAL -->
+  <div class="diary-modal-overlay" id="diary-modal-overlay" onclick="if(event.target===this) closeDiaryDetail()">
+    <div class="diary-modal">
+      <div class="diary-modal-header">
+        <span class="entry-date-badge" id="modal-date-badge"></span>
+        <button class="diary-modal-close" onclick="closeDiaryDetail()">✕</button>
+      </div>
+      <div class="diary-modal-meta">
+        <span class="meta-item" id="modal-mood"></span>
+        <span class="meta-item" id="modal-distance"></span>
+      </div>
+      <p class="entry-text" id="modal-text"></p>
+      <div class="ai-response">
+        <div class="ai-label">💌 친구의 답장</div>
+        <div class="ai-text" id="modal-ai-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT PAGE -->
+  <div class="page" id="page-chat">
+    <div class="chat-settings">
+      <div class="settings-row">
+        <div class="settings-group">
+          <label>고민 카테고리</label>
+          <div class="category-chips">
+            <span class="chip selected" data-cat="일반">일반</span>
+            <span class="chip" data-cat="고백">고백</span>
+            <span class="chip" data-cat="짝사랑">짝사랑</span>
+            <span class="chip" data-cat="이별">이별</span>
+            <span class="chip" data-cat="다툼">다툼</span>
+            <span class="chip" data-cat="재회">재회</span>
+            <span class="chip" data-cat="썸">썸</span>
+          </div>
+        </div>
+        <div class="settings-group">
+          <label>AI 조언 스타일</label>
+          <div class="style-sliders">
+            <div class="slider-row">
+              <span class="slider-label">따뜻한 공감</span>
+              <input type="range" min="0" max="100" value="60" id="slider-warm" oninput="syncSliders('warm')">
+              <span class="slider-pct" id="pct-warm">60%</span>
+            </div>
+            <div class="slider-row">
+              <span class="slider-label">현실적 직설</span>
+              <input type="range" min="0" max="100" value="40" id="slider-real" oninput="syncSliders('real')">
+              <span class="slider-pct" id="pct-real">40%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-window" id="chat-window">
+      <div class="bubble system-msg">카테고리와 스타일을 설정하고 고민을 털어놔봐 💬</div>
+    </div>
+
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="고민을 적어봐..."
+        onkeydown="if(event.key==='Enter') sendChat()">
+      <button id="chat-send-btn" onclick="sendChat()">보내기</button>
+    </div>
+  </div>
 </div>
 
 <script>
-  let apiKey = '';
-  let chats = [];
+let API_KEY = '';
+let chatHistory = [];
+let selectedCategory = '일반';
+let diaryEntries = [];
+let selectedMood = null;
+let calendarViewDate = new Date();
 
-  const SYSTEM_PROMPT = `당신은 따뜻하고 공감 능력이 뛰어난 연애 상담사입니다.
-사용자의 이야기를 먼저 충분히 공감하고, 
-판단하지 않으며, 실용적인 조언도 부드럽게 건네주세요.
-반말로 친근하게 대화하되, 존중하는 말투를 유지하세요.
-답변은 너무 길지 않게, 2~4문장 정도로 핵심만 전해주세요.`;
-
-  function setApiKey() {
-    const key = document.getElementById('api-key-input').value.trim();
-    if (!key) { alert('API Key를 입력해주세요!'); return; }
-    apiKey = key;
-    document.getElementById('api-section').style.display = 'none';
-    document.getElementById('user-input').disabled = false;
-    document.getElementById('send-btn').disabled = false;
-    addMessage('ai', '안녕! 나는 네 연애 고민을 들어줄 상담사야 💗 무슨 일이 있어?');
-    document.getElementById('user-input').focus();
+// STYLE SLIDERS — keep warm + real = 100
+function syncSliders(changed) {
+  const warm = document.getElementById('slider-warm');
+  const real = document.getElementById('slider-real');
+  if (changed === 'warm') {
+    real.value = 100 - parseInt(warm.value);
+  } else {
+    warm.value = 100 - parseInt(real.value);
   }
+  document.getElementById('pct-warm').textContent = warm.value + '%';
+  document.getElementById('pct-real').textContent = real.value + '%';
+}
 
-  function addMessage(role, text) {
-    const box = document.getElementById('chat-box');
-    const div = document.createElement('div');
-    div.className = 'msg ' + role;
-    div.textContent = text;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
-  }
+// MOOD PICKER
+document.querySelectorAll('.mood-option').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const isSame = btn.classList.contains('selected');
+    document.querySelectorAll('.mood-option').forEach(b => b.classList.remove('selected'));
+    selectedMood = isSame ? null : btn.dataset.mood;
+    if (!isSame) btn.classList.add('selected');
+  });
+});
 
-  async function sendMessage() {
-    const input = document.getElementById('user-input');
-    const text = input.value.trim();
-    if (!text || !apiKey) return;
+// DISTANCE SLIDER
+function updateDistanceLabel() {
+  const val = document.getElementById('distance-slider').value;
+  document.getElementById('distance-value').textContent = val + '%';
+}
 
-    addMessage('user', text);
-    chats.push({ role: 'user', parts: [{ text }] });
-    input.value = '';
-    input.disabled = true;
-    document.getElementById('send-btn').disabled = true;
+// CATEGORY CHIPS
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    selectedCategory = chip.dataset.cat;
+    chatHistory = [];
+    const win = document.getElementById('chat-window');
+    win.innerHTML = `<div class="bubble system-msg">카테고리: <b>${selectedCategory}</b> — 새로운 대화를 시작해볼게!</div>`;
+  });
+});
 
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: chats
-          })
-        }
-      );
-      const data = await res.json();
+// START APP
+function startApp() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { alert('API Key를 입력해줘!'); return; }
+  API_KEY = key;
+  document.getElementById('api-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('today-display').textContent = getTodayStr();
+  renderCalendar();
+}
 
-      let reply;
-      if (!res.ok) {
-        const code = res.status;
-        const apiMsg = data.error?.message || '';
-        if (code === 400) reply = `요청 형식이 잘못됐어. (400: ${apiMsg})`;
-        else if (code === 401 || code === 403) reply = `API Key가 유효하지 않아. 키를 다시 확인해봐! (${code})`;
-        else if (code === 429) reply = `API 사용량이 초과됐어. 잠깐 후에 다시 시도해줘! (429)`;
-        else if (code >= 500) reply = `Gemini 서버에 문제가 생겼어. 잠시 후 다시 시도해봐! (${code})`;
-        else reply = `알 수 없는 오류가 났어. (${code}: ${apiMsg})`;
-      } else if (!data.candidates?.length) {
-        reply = '응답이 안전 필터에 걸렸거나 빈 답변이 왔어. 다르게 표현해볼래?';
-      } else if (!data.candidates[0].content) {
-        const reason = data.candidates[0].finishReason || '알 수 없음';
-        reply = `답변이 중단됐어 (이유: ${reason}). 다르게 표현해볼래?`;
-      } else {
-        reply = data.candidates[0].content.parts[0].text;
-      }
+function getTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+}
 
-      if (res.ok && data.candidates?.length && data.candidates[0].content) {
-        chats.push({ role: 'model', parts: [{ text: reply }] });
-      }
-      addMessage('ai', reply);
-    } catch (e) {
-      addMessage('ai', `네트워크 연결에 문제가 생겼어. 인터넷을 확인해봐! (${e.message})`);
+function getDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// TAB SWITCH
+function switchTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// GEMINI API CALL
+async function callGemini(systemPrompt, contents) {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: contents
+      })
     }
+  );
+  const data = await res.json();
 
-    input.disabled = false;
-    document.getElementById('send-btn').disabled = false;
-    input.focus();
+  if (!res.ok) {
+    const code = res.status;
+    const apiMsg = data.error?.message || '';
+    if (code === 400) return `요청 형식이 잘못됐어. (400: ${apiMsg})`;
+    if (code === 401 || code === 403) return `API Key가 유효하지 않아. 키를 다시 확인해봐! (${code})`;
+    if (code === 429) return `API 사용량이 초과됐어. 잠깐 후에 다시 시도해줘! (429)`;
+    if (code >= 500) return `Gemini 서버에 문제가 생겼어. 잠시 후 다시 시도해봐! (${code})`;
+    return `알 수 없는 오류가 났어. (${code}: ${apiMsg})`;
   }
+  if (!data.candidates?.length) {
+    return '응답이 안전 필터에 걸렸거나 빈 답변이 왔어. 다르게 표현해볼래?';
+  }
+  if (!data.candidates[0].content) {
+    const reason = data.candidates[0].finishReason || '알 수 없음';
+    return `답변이 중단됐어 (이유: ${reason}). 다르게 표현해볼래?`;
+  }
+  return data.candidates[0].content.parts[0].text;
+}
+
+// DIARY
+async function submitDiary() {
+  const text = document.getElementById('diary-input').value.trim();
+  if (!text) return;
+  const btn = document.getElementById('diary-submit-btn');
+  btn.disabled = true;
+  btn.textContent = '읽는 중...';
+
+  const now = new Date();
+  const date = getTodayStr();
+  const dateKey = getDateKey(now);
+  const mood = selectedMood;
+  const distance = parseInt(document.getElementById('distance-slider').value);
+
+  const entry = { dateKey, dateLabel: date, text, mood, distance, aiReply: null };
+  diaryEntries.push(entry);
+
+  const entryEl = createDiaryEntryEl(date, text, null, mood, distance);
+  const entriesContainer = document.getElementById('diary-entries');
+  const emptyState = entriesContainer.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+  entriesContainer.prepend(entryEl);
+  document.getElementById('diary-input').value = '';
+
+  document.querySelectorAll('.mood-option').forEach(b => b.classList.remove('selected'));
+  selectedMood = null;
+  document.getElementById('distance-slider').value = 50;
+  updateDistanceLabel();
+
+  renderCalendar();
+
+  const systemPrompt = `너는 사용자의 가장 친한 친구야. 연애나 사랑에 관한 일기를 읽고 반응해줘.
+- 판단 없이 공감하는 친구처럼 말해
+- 반말로, 따뜻하고 자연스럽게
+- 일기 내용에 구체적으로 반응해줘 (그냥 "힘들겠다"가 아니라 내용에 맞게)
+- 조언보다는 공감과 감정 나누기 위주로
+- 3~5문장 정도로`;
+
+  try {
+    const reply = await callGemini(systemPrompt, [
+      { role: 'user', parts: [{ text: `[${date} 일기]\n${text}` }] }
+    ]);
+    entry.aiReply = reply;
+    updateDiaryAI(entryEl, reply);
+  } catch(e) {
+    entry.aiReply = 'AI 연결에 문제가 생겼어. API Key를 확인해봐!';
+    updateDiaryAI(entryEl, entry.aiReply);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '친구에게 보내기';
+}
+
+function createDiaryEntryEl(date, text, aiText, mood, distance) {
+  const el = document.createElement('div');
+  el.className = 'diary-entry';
+  const metaHtml = (mood || distance != null) ? `
+    <div class="diary-modal-meta">
+      ${mood ? `<span class="meta-item">${mood}</span>` : ''}
+      ${distance != null ? `<span class="meta-item">🔗 너와 나의 거리 ${distance}%</span>` : ''}
+    </div>` : '';
+  el.innerHTML = `
+    <div class="entry-header">
+      <span class="entry-date-badge">${date}</span>
+    </div>
+    <div class="entry-body">
+      ${metaHtml}
+      <p class="entry-text">${escapeHtml(text)}</p>
+      <div class="ai-response">
+        <div class="ai-label">💌 친구의 답장</div>
+        <div class="ai-text">${aiText ? escapeHtml(aiText) : '<span class="ai-loading dot-anim">읽고 있어</span>'}</div>
+      </div>
+    </div>`;
+  return el;
+}
+
+function updateDiaryAI(entryEl, text) {
+  entryEl.querySelector('.ai-text').innerHTML = escapeHtml(text);
+}
+
+// DIARY CALENDAR
+function changeCalendarMonth(delta) {
+  calendarViewDate.setMonth(calendarViewDate.getMonth() + delta);
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const year = calendarViewDate.getFullYear();
+  const month = calendarViewDate.getMonth();
+  document.getElementById('cal-month-label').textContent = `${year}년 ${month+1}월`;
+
+  const entryMap = {};
+  diaryEntries.forEach(e => { entryMap[e.dateKey] = e; });
+
+  const todayKey = getDateKey(new Date());
+  const firstDay = new Date(year, month, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < startWeekday; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-cell empty';
+    grid.appendChild(empty);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement('div');
+    const dateKey = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const entry = entryMap[dateKey];
+    cell.className = 'cal-cell' + (entry ? ' has-entry' : '') + (dateKey === todayKey ? ' today' : '');
+    cell.innerHTML = entry
+      ? `<span class="cal-mood">${entry.mood || '📝'}</span><span>${day}</span>`
+      : `<span>${day}</span>`;
+    if (entry) {
+      cell.addEventListener('click', () => openDiaryDetail(dateKey));
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function openDiaryDetail(dateKey) {
+  const entry = diaryEntries.slice().reverse().find(e => e.dateKey === dateKey);
+  if (!entry) return;
+
+  document.getElementById('modal-date-badge').textContent = entry.dateLabel;
+  document.getElementById('modal-mood').textContent = entry.mood ? `오늘의 기분 ${entry.mood}` : '';
+  document.getElementById('modal-distance').textContent = entry.distance != null ? `🔗 너와 나의 거리 ${entry.distance}%` : '';
+  document.getElementById('modal-text').textContent = entry.text;
+  document.getElementById('modal-ai-text').textContent = entry.aiReply || '아직 답장을 받지 못했어.';
+  document.getElementById('diary-modal-overlay').classList.add('open');
+}
+
+function closeDiaryDetail() {
+  document.getElementById('diary-modal-overlay').classList.remove('open');
+}
+
+// CHAT
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const win = document.getElementById('chat-window');
+  addBubble(win, 'user', text);
+  chatHistory.push({ role: 'user', parts: [{ text }] });
+  input.value = '';
+  input.disabled = true;
+  document.getElementById('chat-send-btn').disabled = true;
+
+  const loadingBubble = document.createElement('div');
+  loadingBubble.className = 'bubble ai';
+  loadingBubble.innerHTML = '<span class="ai-loading dot-anim">생각하는 중</span>';
+  win.appendChild(loadingBubble);
+  win.scrollTop = win.scrollHeight;
+
+  const warm = parseInt(document.getElementById('slider-warm').value);
+  const real = 100 - warm;
+  const systemPrompt = `너는 연애 상담을 해주는 친한 친구야.
+현재 상담 카테고리: ${selectedCategory}
+조언 스타일: 따뜻한 공감 ${warm}%, 현실적 직설 ${real}%
+- 반말로, 친근하게 대화해
+- 카테고리(${selectedCategory})에 특화된 조언과 시각을 제공해
+- 스타일 비율에 맞게 응답 톤을 조절해 (공감이 높으면 더 감성적, 직설이 높으면 더 현실적이고 솔직하게)
+- 3~5문장 이내로 핵심만`;
+
+  try {
+    const reply = await callGemini(systemPrompt, chatHistory);
+    loadingBubble.remove();
+    addBubble(win, 'ai', reply);
+    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+  } catch(e) {
+    loadingBubble.remove();
+    addBubble(win, 'ai', 'AI 연결에 문제가 생겼어. API Key를 확인해봐!');
+  }
+
+  input.disabled = false;
+  document.getElementById('chat-send-btn').disabled = false;
+  input.focus();
+}
+
+function addBubble(win, role, text) {
+  const div = document.createElement('div');
+  div.className = 'bubble ' + role;
+  div.textContent = text;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 </script>
 </body>
 </html>
