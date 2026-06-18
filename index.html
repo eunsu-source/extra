@@ -138,6 +138,11 @@
   /* PAGES */
   .page { display: none; padding: 2rem; max-width: 760px; margin: 0 auto; }
   .page.active { display: block; }
+  #page-chat.active {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 72px);
+  }
 
   /* DIARY PAGE */
   .diary-date-header {
@@ -242,6 +247,23 @@
     line-height: 1.8;
     color: var(--ink-soft);
   }
+  .ai-response-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.75rem;
+  }
+  .btn-continue {
+    padding: 0.35rem 0.9rem;
+    background: transparent;
+    color: var(--rose);
+    border: 1px solid var(--rose-mid);
+    border-radius: 20px;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-continue:hover { background: var(--rose-light); border-color: var(--rose); }
   .ai-loading {
     font-size: 0.85rem;
     color: var(--ink-muted);
@@ -518,7 +540,8 @@
     background: var(--white);
     border: 1px solid var(--border);
     border-radius: 12px;
-    height: 360px;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 1.25rem;
     display: flex;
@@ -598,7 +621,7 @@
   <div class="api-card">
     <div class="logo-mark">연애노트</div>
     <h2>오늘의 감정을 기록해요</h2>
-    <input type="password" id="api-key-input" placeholder="Gemini API Key를 입력해주세요">
+    <input type="password" id="api-key-input" placeholder="Gemini API Key를 입력해주세요" onkeydown="if(event.key==='Enter') startApp()">
     <button onclick="startApp()">시작하기</button>
     <p class="hint">API Key는 브라우저에만 저장되며 어디에도 전송되지 않아요.<br>aistudio.google.com에서 발급받을 수 있어요.</p>
   </div>
@@ -609,8 +632,8 @@
   <header class="app-header">
     <div class="brand">연애노트</div>
     <nav class="tab-nav">
-      <button class="active" onclick="switchTab('diary')">일기</button>
-      <button onclick="switchTab('chat')">상담</button>
+      <button class="active" data-tab="diary" onclick="switchTab('diary')">일기</button>
+      <button data-tab="chat" onclick="switchTab('chat')">상담</button>
     </nav>
   </header>
 
@@ -647,7 +670,7 @@
       </div>
 
       <div class="write-footer">
-        <button class="btn-rose" id="diary-submit-btn" onclick="submitDiary()">친구에게 보내기</button>
+        <button class="btn-rose" id="diary-submit-btn" onclick="submitDiary()">오늘의 마음 전달</button>
       </div>
     </div>
 
@@ -683,6 +706,9 @@
       <div class="ai-response">
         <div class="ai-label">💌 친구의 답장</div>
         <div class="ai-text" id="modal-ai-text"></div>
+        <div class="ai-response-footer">
+          <button type="button" class="btn-continue" id="modal-continue-chat-btn">이어서 대화하기</button>
+        </div>
       </div>
     </div>
   </div>
@@ -807,7 +833,7 @@ function switchTab(tab) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + tab).classList.add('active');
-  event.currentTarget.classList.add('active');
+  document.querySelector(`.tab-nav button[data-tab="${tab}"]`).classList.add('active');
 }
 
 // GEMINI API CALL
@@ -862,6 +888,7 @@ async function submitDiary() {
   diaryEntries.push(entry);
 
   const entryEl = createDiaryEntryEl(date, text, null, mood, distance);
+  entryEl.querySelector('.continue-chat-btn').addEventListener('click', () => continueChatFromDiary(entry));
   const entriesContainer = document.getElementById('diary-entries');
   const emptyState = entriesContainer.querySelector('.empty-state');
   if (emptyState) emptyState.remove();
@@ -894,7 +921,7 @@ async function submitDiary() {
   }
 
   btn.disabled = false;
-  btn.textContent = '친구에게 보내기';
+  btn.textContent = '오늘의 마음 전달';
 }
 
 function createDiaryEntryEl(date, text, aiText, mood, distance) {
@@ -915,6 +942,9 @@ function createDiaryEntryEl(date, text, aiText, mood, distance) {
       <div class="ai-response">
         <div class="ai-label">💌 친구의 답장</div>
         <div class="ai-text">${aiText ? escapeHtml(aiText) : '<span class="ai-loading dot-anim">읽고 있어</span>'}</div>
+        <div class="ai-response-footer">
+          <button type="button" class="btn-continue continue-chat-btn">이어서 대화하기</button>
+        </div>
       </div>
     </div>`;
   return el;
@@ -976,6 +1006,10 @@ function openDiaryDetail(dateKey) {
   document.getElementById('modal-distance').textContent = entry.distance != null ? `🔗 너와 나의 거리 ${entry.distance}%` : '';
   document.getElementById('modal-text').textContent = entry.text;
   document.getElementById('modal-ai-text').textContent = entry.aiReply || '아직 답장을 받지 못했어.';
+  document.getElementById('modal-continue-chat-btn').onclick = () => {
+    closeDiaryDetail();
+    continueChatFromDiary(entry);
+  };
   document.getElementById('diary-modal-overlay').classList.add('open');
 }
 
@@ -984,6 +1018,26 @@ function closeDiaryDetail() {
 }
 
 // CHAT
+function continueChatFromDiary(entry) {
+  switchTab('chat');
+
+  chatHistory = [{ role: 'user', parts: [{ text: `[${entry.dateLabel} 일기]\n${entry.text}` }] }];
+  if (entry.aiReply) {
+    chatHistory.push({ role: 'model', parts: [{ text: entry.aiReply }] });
+  }
+
+  const win = document.getElementById('chat-window');
+  win.innerHTML = '';
+  const sys = document.createElement('div');
+  sys.className = 'bubble system-msg';
+  sys.textContent = `${entry.dateLabel} 일기를 바탕으로 상담을 이어갈게 💬`;
+  win.appendChild(sys);
+  addBubble(win, 'user', entry.text);
+  if (entry.aiReply) addBubble(win, 'ai', entry.aiReply);
+
+  document.getElementById('chat-input').focus();
+}
+
 async function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
